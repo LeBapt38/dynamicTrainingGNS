@@ -7,6 +7,9 @@
     - [Creating the dataset](#creating-the-dataset)
     - [The training](#the-training)
     - [A few other tools to test the GNS](#a-few-other-tools-to-test-the-gns)
+- [Things to look at when debugging](#things-to-look-at-when-debugging)
+    - [Issue during the run.subprocess](#issue-during-the-runsubprocess)
+    - [Issue with the number of parameters](#issue-with-the-number-of-parameters)
 
 
 ## Introduction
@@ -75,4 +78,17 @@ I put two method to have a global idea of the loss across all the different para
 - stdLoss to get the standard deviation of the loss function
 
 There is also a method graphLossParameter which takes the parameter that interests us and plot the loss as a function of that parameter.
+
+## Things to look at when debugging
+### Issue during the run.subprocess
+
+If errors appears during the parts where the GNS or MPM code is running, you can locate the error by printing the log. For that, add *print(resultGNS.stderr)* just after the command subprocess.run.
+
+### Issue with the number of parameters 
+
+If you change the model and therefore the number of parameters, you may raise unexpected errors in the GNS code. The firs thing to do do is to modify to line of code where the number of parameters is "hardcoded" : 
+- in learned_simulator.py in method encoder_preprocessor(...), material_property.view(nparticle, **nparameters**), nparameters need to be replaced by the number of parameters you have.
+- in data_loader.py lines 105 and 210, np.full((positions.shape[0], **nparameter**)), nparameters need to be replaced by the number of parameters you have.
+
+Sommething a bit more logic, you have to modify the metadata.json file. Put the right number of parameters in material_feature_len and put 37+nbParameters in nnode_in.
 

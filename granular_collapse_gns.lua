@@ -23,7 +23,7 @@ a = math.random()
 b = math.random()
 c = math.random()
 randomPart = 0.1
-Youngs = 300000.0
+Youngs = 40000000.0
 randomYoung = Youngs * (1 + ((0.5 - a) * randomPart))
 nu = 0.3
 randomNu = nu * (1 + ((0.5 - b) * randomPart))
@@ -32,10 +32,12 @@ randomRho = rho * (1 + ((0.5 - c) * randomPart))
 
 friction_angle =23
 
+volFriction = 0.31
+
 max_dt = 0.6 * dx * math.sqrt(rho/Youngs)
 
 i = 0
-output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_23_19-20"
+output = "/media/user/Volume/granular_collapse_GNS_dyn/train/40000000_30_25000_23_0-1"
 function initialize(frame)
 	--ici on charge la géométrie
 	local min_corner = TV.create({-0.0705,0, -0.0705})
@@ -57,7 +59,7 @@ function initialize(frame)
 	local ground_normal = TV.create({0,1,0})
 	local ground_ls = HalfSpace.new(ground_origin, ground_normal)
 	local ground_object = AnalyticCollisionObject.new(ground_ls, SEPARATE)
-	ground_object:setFriction(0.32)
+	ground_object:setFriction(volFriction)
 	mpm:addAnalyticCollisionObject(ground_object)
 
 end

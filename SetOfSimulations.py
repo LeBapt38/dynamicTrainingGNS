@@ -6,8 +6,8 @@ Created on Mon June  10 17:29:22 2024
 This file contains the class with to train a GNS on different set of parameters.
 """
 
-from Simulations import *
 import matplotlib.pyplot as plt
+from Simulations import *
 
 class setOfSimulations :
 
@@ -92,9 +92,9 @@ class setOfSimulations :
                 else:
                     file.write(line)
 
-    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000) :
+    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31) :
         for setOfParameter in parameters :
-            simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame)
+            simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume)
             simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh")
             self.setOfSimulations.append(simu)
     
@@ -140,7 +140,7 @@ class setOfSimulations :
         std /= len(self.setOfSimulations)
         std -= self.averageLoss()**2
         return(std)
-    
+  
     def graphLossParameter(self, parameter = "rho") :
         '''
         Input : the parameter on which we want the graph made
@@ -149,6 +149,7 @@ class setOfSimulations :
         '''
         dico = {}
         for simu in self.setOfSimulations :
+            b = 0
             if parameter == "rho" :
                 b = simu.rho
             elif parameter == "nu" :
@@ -163,7 +164,7 @@ class setOfSimulations :
             if b in dico :
                 dico[b] += np.array([loss, 1])
             else :
-                dico[b] += np.array([loss, 1])
+                dico[b] = np.array([loss, 1])
         listOfValue = []
         listOfLoss = []
         for valuePar, loss in dico.items() :
@@ -184,8 +185,8 @@ class setOfSimulations :
         plt.figure("Loss as a function of " + par)
         plt.clf()
         plt.scatter(listOfValue, listOfLoss)
-        plt.xlabel("loss")
-        plt.ylabel(par + " [" + b + "]")
+        plt.ylabel("loss")
+        plt.xlabel(par + " [" + b + "]")
         plt.title("Average loss for each value of " + par)
         plt.show()
         return(listOfValue, listOfLoss)
@@ -195,11 +196,12 @@ class setOfSimulations :
 
 
 
-
-simu = setOfSimulations()
-simu.createSuperDataset(parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}, {"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}])
-for i in range(1000) :
-    simu.trainGNScycle()
-    print("training " + str(i) + "done")
-simu.setOfSimulations[0].rolloutGNS(simu.nbTrainingSteps)
-print("rollout done")
+def testClassSetOfSimulations() :
+    simu = setOfSimulations(nbSimuTraining=[1])
+    simu.createSuperDataset(parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}, {"young" : 4e7, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}])
+    for i in range(1) :
+        simu.trainGNScycle()
+        print("training " + str(i) + " done")
+    simu.setOfSimulations[0].rolloutGNS(simu.nbTrainingSteps)
+    print("rollout done")
+    simu.graphLossParameter("young")

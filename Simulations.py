@@ -11,15 +11,15 @@ import numpy as np
 import subprocess
 import shutil
 
-
 class simulations :
-    def __init__(self, young = 3e5, nu = 0.3, rho = 25000, frictionAngle = 23, nbFrame = 81,
+    def __init__(self, young = 3e5, nu = 0.3, rho = 25000, frictionAngle = 23, frictionVolume = 0.31, nbFrame = 81,
                  AdressBgeoTrain = 0, AdressBgeoTrainReserve = [], AdressBgeoTest = [], AdressBgeoValid = [], adressBgeoObject = "", AdressNpzTrainReserve = [], adressNpzTest = "", adressNpzValid = "",
                  loss = 0) :
         self.young = young
         self.nu = nu
         self.rho = rho 
         self.frictionAngle = frictionAngle
+        self.frictionVolume = frictionVolume
         self.nbFrame = nbFrame
         #Contains the adress of the current simu used to trained among the reserve
         self.AdressTrain = AdressBgeoTrain
@@ -49,7 +49,8 @@ class simulations :
                               "nu =" : "nu = " + str(self.nu),
                               "rho " : "rho = " + str(self.rho),
                               "fric" : "friction_angle =" + str(self.frictionAngle),
-                              "outp" : "output = \"" + adressCurrentSimu + "\""}
+                              "outp" : "output = \"" + adressCurrentSimu + "\"",
+                              "volF" : "volFriction = " + str(self.frictionVolume)}
             # Read the contents of the file
             with open(adressLua, 'r') as file:
                 lines = file.readlines()
@@ -92,8 +93,9 @@ class simulations :
             positions.append(positions_tps_fixe)
         
         #create the array for particule type and gives a value (0 for points or 5?)
-        particles_type = [0 for x in positions[0]]
-        return(positions, particles_type) 
+        particles_type = [6 for x in positions[0]]
+        particle_parameters = [[self.young, self.nu, self.rho, self.frictionAngle] for x in positions[0]]
+        return(positions, particles_type, particle_parameters) 
     
     def bgeoToDataVolume(self, nbPointsVolume) :
         #Input : nb of points we want for the volume and folder path to the simulation
@@ -128,8 +130,9 @@ class simulations :
                 points.append(list(randPoint.position()))
             nb_try += 1
         #create the array for particule type and gives a value 4
-        particle_type_vol = [6 for x in points]
-        return(points, particle_type_vol)
+        particle_type_vol = [0 for x in points]
+        particle_parameters = [self.frictionVolume for x in points[0]]
+        return(points, particle_type_vol, particle_parameters) 
 
     def bgeoToNpz(self, nbPointsVolume, adressNpz) :
         """
@@ -140,16 +143,17 @@ class simulations :
         if (self.adressBgeoObject != "") :
             positionsVol, particleTypeVol = self.bgeoToDataVolume(nbPointsVolume)
         else :
-            positionsVol, particleTypeVol = [], []
+            positionsVol, particleTypeVol, particleParVol = [], [], []
         # Transform bgeo file for training in npz
         for setSimuTrain in self.AdressBgeoTrainReserve :
             i = 0
             dataset = {}
             for simuTrain in setSimuTrain :
-                positionsPoints, particleTypePoint = self.bgeoToDataPoints(simuTrain)
+                positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuTrain)
                 positions = positionsVol + positionsPoints 
                 particleType = particleTypeVol + particleTypePoint
-                data = (np.array(positions), np.array(particleType))
+                particlePar += particleParVol
+                data = (np.array(positions), np.array(particleType), np.array(particlePar))
                 name = "simulation_trajectory_" + str(i)
                 i += 1
                 dataset[name] = data
@@ -162,10 +166,11 @@ class simulations :
         i = 0
         dataset = {}
         for simuValid in self.AdressBgeoValid :
-            positionsPoints, particleTypePoint = self.bgeoToDataPoints(simuValid)
+            positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuValid)
             positions = positionsVol + positionsPoints 
             particleType = particleTypeVol + particleTypePoint
-            data = (np.array(positions), np.array(particleType))
+            particlePar += particleParVol
+            data = (np.array(positions), np.array(particleType), np.array(particlePar))
             name = "simulation_trajectory_" + str(i)
             i += 1
             dataset[name] = data
@@ -178,10 +183,11 @@ class simulations :
         i = 0
         dataset = {}
         for simuTest in self.AdressBgeoTest :
-            positionsPoints, particleTypePoint = self.bgeoToDataPoints(simuTest)
+            positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuTest)
             positions = positionsVol + positionsPoints 
             particleType = particleTypeVol + particleTypePoint
-            data = (np.array(positions), np.array(particleType))
+            particlePar += particleParVol
+            data = (np.array(positions), np.array(particleType), np.array(particlePar))
             name = "simulation_trajectory_" + str(i)
             i += 1
             dataset[name] = data
@@ -256,9 +262,11 @@ class simulations :
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
-        while loss[:2] != ": " :
+        while loss[:2] != ": " and i < 100 :
             i += 1
             loss = resultGNS.stdout[-(5+i):]
+        if i == 100 :
+            print("No value of loss found during validation")
         loss = float(loss[1:])
         self.loss = loss
     
@@ -283,9 +291,11 @@ class simulations :
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
-        while loss[:2] != ": " :
+        while loss[:2] != ": " and i < 100 :
             i += 1
             loss = resultGNS.stdout[-(5+i):]
+        if i == 100 :
+            print("No value of loss found during validation")
         loss = float(loss[1:])
         return(loss)
     
