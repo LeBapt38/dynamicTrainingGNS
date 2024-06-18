@@ -22,19 +22,21 @@ flip_pic_ratio = 0.99
 a = math.random()
 b = math.random()
 c = math.random()
-randomPart = 0.1
+d = math.random()
+randomness = 0
 Youngs = 40000000.0
-randomYoung = Youngs * (1 + ((0.5 - a) * randomPart))
+ryoung = Youngs * (1 + ((0.5 - a) * randomness))
 nu = 0.3
-randomNu = nu * (1 + ((0.5 - b) * randomPart))
+rnu = nu * (1 + ((0.5 - b) * randomness))
 rho = 25000
-randomRho = rho * (1 + ((0.5 - c) * randomPart))
+rrho = rho * (1 + ((0.5 - c) * randomness))
 
 friction_angle =23
+rfriction_angle = friction_angle * (1 + ((0.5 - d) * randomness))
 
 volFriction = 0.31
 
-max_dt = 0.6 * dx * math.sqrt(rho/Youngs)
+max_dt = 0.6 * dx * math.sqrt(rrho/ryoung)
 
 i = 0
 output = "/media/user/Volume/granular_collapse_GNS_dyn/train/40000000_30_25000_23_0-1"
@@ -43,10 +45,10 @@ function initialize(frame)
 	local min_corner = TV.create({-0.0705,0, -0.0705})
 	local max_corner = TV.create({.0705,.0564, .0705})
 	local box = AxisAlignedAnalyticBox.new(min_corner, max_corner)
-	local particles_hande = mpm:sampleInAnalyticLevelSet(box, rho, 8)
+	local particles_hande = mpm:sampleInAnalyticLevelSet(box, rrho, 8)
 
 	--ici on charge la loi elastique
-	local m = StvkWithHencky.new(Youngs,nu)
+	local m = StvkWithHencky.new(ryoung,rnu)
 	particles_hande:addFBasedMpmForce(m)
 
 	--ici on charge la loi constitutive

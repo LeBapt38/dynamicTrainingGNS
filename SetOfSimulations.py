@@ -92,10 +92,10 @@ class setOfSimulations :
                 else:
                     file.write(line)
 
-    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31) :
+    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0) :
         for setOfParameter in parameters :
             simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume)
-            simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh")
+            simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh", randomnessTrain=randomnessTrain, randomnessValid=randomnessValid)
             self.setOfSimulations.append(simu)
     
     def orderByLoss(self) :
@@ -125,6 +125,7 @@ class setOfSimulations :
             simu.validGNS(self.nbTrainingSteps)
         self.orderByLoss()
         self.adaptNbOfSimu()
+        return(self.averageLoss)
     
     def averageLoss(self) :
         moy = 0
@@ -171,24 +172,23 @@ class setOfSimulations :
             listOfValue.append(valuePar)
             listOfLoss.append(loss[0] / loss[1])
         if parameter == "rho" :
-            par = "the volumic mass"
+            par = "Volumic mass"
             b = "kg/m^3"
         elif parameter == "nu" :
-            par = "viscosity"
+            par = "Viscosity"
             b = "Pa.s"
         elif parameter == "young" :
-            par = "the young modulus"
+            par = "Young modulus"
             b = "MPa"
         elif parameter == "friction angle" :
-            par = "the friction angle"
+            par = "Friction angle"
             b = "degrés"
         plt.figure("Loss as a function of " + par)
         plt.clf()
         plt.scatter(listOfValue, listOfLoss)
-        plt.ylabel("loss")
+        plt.ylabel("Loss")
         plt.xlabel(par + " [" + b + "]")
         plt.title("Average loss for each value of " + par)
-        plt.show()
         return(listOfValue, listOfLoss)
 
                 
@@ -199,7 +199,7 @@ class setOfSimulations :
 def testClassSetOfSimulations() :
     simu = setOfSimulations(nbSimuTraining=[1])
     simu.createSuperDataset(parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}, {"young" : 4e7, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}])
-    for i in range(1) :
+    for i in range(10) :
         simu.trainGNScycle()
         print("training " + str(i) + " done")
     simu.setOfSimulations[0].rolloutGNS(simu.nbTrainingSteps)

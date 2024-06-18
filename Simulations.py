@@ -34,7 +34,7 @@ class simulations :
         self.loss = loss
     
 
-    def launchSimulation(self,  adressSimu, exeMPM, adressLua, nbSimu, typeSimu) :
+    def launchSimulation(self,  adressSimu, exeMPM, adressLua, nbSimu, typeSimu, randomness = 0) :
         """
         Input : desired number of simulation and adress used plus in which category we want it
         Launch all the simulations and place them at the desired place, the adress is saved.
@@ -50,7 +50,8 @@ class simulations :
                               "rho " : "rho = " + str(self.rho),
                               "fric" : "friction_angle =" + str(self.frictionAngle),
                               "outp" : "output = \"" + adressCurrentSimu + "\"",
-                              "volF" : "volFriction = " + str(self.frictionVolume)}
+                              "volF" : "volFriction = " + str(self.frictionVolume), 
+                              "rand" : "randomness = " + str(randomness)}
             # Read the contents of the file
             with open(adressLua, 'r') as file:
                 lines = file.readlines()
@@ -198,12 +199,12 @@ class simulations :
         print("Transformation bgeo to npz done")
 
     def createDataset(self, adressBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', adressLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/granular_collapse_gns.lua', 
-                       nbPointsVolume = 1000, nbSimuTrain = [10, 20], nbSimuTest = 4, nbSimuValid = 4,
+                       nbPointsVolume = 1000, nbSimuTrain = [10, 20], nbSimuTest = 4, nbSimuValid = 4, randomnessTrain = 0, randomnessValid = 0 ,
                        exeMPM = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/exeMPM.sh') :
         self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimuTest, "test")
-        self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimuValid, "valid")
+        self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimuValid, "valid",randomnessValid)
         for nbSimu in nbSimuTrain :
-            self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimu, "train")
+            self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimu, "train", randomnessTrain)
         self.bgeoToNpz(nbPointsVolume, adressNpz)
     
     def trainGNS(self, nbTrainingSteps, nbTrainingStepsToAdd, exeGNStrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNStrain.sh', exeGNSretrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNSretrain.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
@@ -316,6 +317,9 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSrollout}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+    
+    def signature(self) :
+        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)))
 
 def testClassSimulations() : 
     simu = simulations()
