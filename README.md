@@ -64,6 +64,9 @@ If there already exists some simulations in the list setOfSimulations, then it w
 When you use the method createSuperDataset, you only have to choose two things : 
 - The physical **parameters** describing the different objects simulation. It is a list of dictionnary of the form : {"young" : , "nu" : , "rho" : , "friction angle" : }
 - the number of points representing the volume used as an obstacle.
+- the path to the data file for the object (.dat or .xyz). Let none be the value if you just want to use the boundary as the object.
+
+Be careful, you have to use the right lua file when you want to put an object in tthe simulation. The transformation from data file to vdb for the MPM to work should be automatic. I just have to find a way to install pyopenvdb to debbug the system.
 
 ### The training
 

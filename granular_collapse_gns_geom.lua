@@ -35,6 +35,7 @@ friction_angle =23
 rfriction_angle = friction_angle * (1 + ((0.5 - d) * randomness))
 
 volFriction = 0.31
+object = "LevelSets/Baptiste/v0.vdb"
 
 max_dt = 0.6 * dx * math.sqrt(rrho/ryoung)
 
@@ -46,6 +47,12 @@ function initialize(frame)
 	local max_corner = TV.create({.0705,.0564, .0705})
 	local box = AxisAlignedAnalyticBox.new(min_corner, max_corner)
 	local particles_hande = mpm:sampleInAnalyticLevelSet(box, rrho, 8)
+
+	-- on donne la forme de l'objet sur lequel on veut faire l'écoulement
+	groundvdb = VdbLevelSet.new(object)
+	local ground_object = AnalyticCollisionObject.new(groundvdb, SEPARATE)
+	ground_object:setFriction(volFriction)
+	mpm:addAnalyticCollisionObject(ground_object)	
 
 	--ici on charge la loi elastique
 	local m = StvkWithHencky.new(ryoung,rnu)

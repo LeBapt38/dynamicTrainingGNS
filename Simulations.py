@@ -10,10 +10,11 @@ import hou
 import numpy as np
 import subprocess
 import shutil
+#import createObstacles as co
 
 class simulations :
     def __init__(self, young = 3e5, nu = 0.3, rho = 25000, frictionAngle = 23, frictionVolume = 0.31, nbFrame = 81,
-                 AdressBgeoTrain = 0, AdressBgeoTrainReserve = [], AdressBgeoTest = [], AdressBgeoValid = [], adressBgeoObject = "", AdressNpzTrainReserve = [], adressNpzTest = "", adressNpzValid = "",
+                 AdressBgeoTrain = 0, AdressBgeoTrainReserve = [], AdressBgeoTest = [], AdressBgeoValid = [], adressObject = None, AdressNpzTrainReserve = [], adressNpzTest = "", adressNpzValid = "",
                  loss = 0) :
         self.young = young
         self.nu = nu
@@ -27,11 +28,12 @@ class simulations :
         self.AdressBgeoTrainReserve = AdressBgeoTrainReserve
         self.AdressBgeoTest = AdressBgeoTest
         self.AdressBgeoValid = AdressBgeoValid
-        self.adressBgeoObject = adressBgeoObject
+        self.adressObject = adressObject
         self.AdressNpzTrainReserve = AdressNpzTrainReserve
         self.AdressNpzTest = adressNpzTest
         self.AdressNpzValid = adressNpzValid
         self.loss = loss
+        self.adressObjectVdb = None
     
 
     def launchSimulation(self,  adressSimu, exeMPM, adressLua, nbSimu, typeSimu, randomness = 0) :
@@ -40,10 +42,18 @@ class simulations :
         Launch all the simulations and place them at the desired place, the adress is saved.
         Output : Confirmation simulation done
         """
+        # Create the vdb file from dat if necessary
+        if (self.adressObjectVdb is None) and (self.adressObject is not None) :
+            i = 5
+            nameObject = self.adressObject[-i:]
+            while nameObject[0] != "/" and i < 15 :
+                i += 1
+                nameObject = self.adressObject[-i:]
+            #self.adressObjectVdb = co.datToVdb(self.adressObject, nameObject)
         AdressBgeo = []
         for i in range(nbSimu) :
             adressCurrentSimu = adressSimu + typeSimu + "/"
-            adressCurrentSimu += str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + str(i) + "-" + str(nbSimu)
+            adressCurrentSimu += self.signature()+ "_" + str(i) + "-" + str(nbSimu)
             # The different parameters which need to be adjusted
             linesToReplace = {"Youn" : "Youngs = " + str(self.young),
                               "nu =" : "nu = " + str(self.nu),
@@ -52,6 +62,8 @@ class simulations :
                               "outp" : "output = \"" + adressCurrentSimu + "\"",
                               "volF" : "volFriction = " + str(self.frictionVolume), 
                               "rand" : "randomness = " + str(randomness)}
+            if self.adressObjectVdb is not None :
+                linesToReplace["obje"] = "object = \"" + self.adressObjectVdb + "\""
             # Read the contents of the file
             with open(adressLua, 'r') as file:
                 lines = file.readlines()
@@ -75,7 +87,7 @@ class simulations :
             self.AdressBgeoTest = AdressBgeo
         else :
             self.AdressBgeoTrainReserve.append(AdressBgeo)
-        print("simulation " + typeSimu + " " + str(self.young) + "_" + str(self.nu) + "_" + str(self.rho) + "_" + str(self.frictionAngle) + "_" + str(i+1) + "-" + str(nbSimu) + " done")
+        print("simulation " + typeSimu + " " + self.signature() + "_" + str(i+1) + "-" + str(nbSimu) + " done")
     
     def bgeoToDataPoints(self, adressBgeo) :
         positions = []
@@ -98,51 +110,37 @@ class simulations :
         particle_parameters = [[self.young, self.nu, self.rho, self.frictionAngle] for x in positions[0]]
         return(positions, particles_type, particle_parameters) 
     
-    def bgeoToDataVolume(self, nbPointsVolume) :
-        #Input : nb of points we want for the volume and folder path to the simulation
+    def xyzToDataSurface(self, nbPointsSurface = None) :
+        #Input : nb of points we want for the surface and 
         #Output : points to represent the volume and the rigt type for an obstacle
-        filePath = self.AdressBgeoObject
+        positions = []
+        filePath = self.adressObject
+        with open(filePath, 'r') as file : 
+            lines = file.readlines()
+        if (nbPointsSurface is not None) and (nbPointsSurface > len(lines)) :
+            pace = len(lines)//nbPointsSurface
+        else : pace = 1   
+        i = 0
+        for line in lines[1:] :
+            if i % pace == 0 :
+                position = line.split()
+                positionFloat = []
+                for val in position :
+                    positionFloat.append(float(val))
+                positions.append(positionFloat)
+            i += 1
+        particles_type = [3 for x in positions]
+        particle_parameters = [[self.frictionVolume, 0, 0, 0] for x in positions]
+        return(positions, particles_type, particle_parameters)
         
-        #Create a Geometry object
-        geo = hou.Geometry()
-        geo.loadFromFile(filePath)
-            
-        # Get the bounding box of the geometry
-        bbox = geo.boundingBox() 
-        min_pos = bbox.minvec()
-        max_pos = bbox.maxvec()
-        
-        #Create an array of points from a volume
-        points = []
-        max_try = 1000000  #secu if no volume
-        nb_try = 0
-        while (len(points) < nbPointsVolume and nb_try < max_try) :
-            randPoint = hou.Vector3(np.random.uniform(min_pos[0], max_pos[0]),
-                                    np.random.uniform(min_pos[1], max_pos[1]),
-                                    np.random.uniform(min_pos[2], max_pos[2]))
-            #Look if the point is inside the volume or not
-            sop = hou.node("/obj/geo1")  # Adjust this to your geometry node path
-            test_geo = sop.createNode("testgeometry")
-            test_geo.setPosition(randPoint)
-            result = geo.intersect(randPoint)
-            test_geo.destroy()
-            result != hou.Vector3()
-            if result:
-                points.append(list(randPoint.position()))
-            nb_try += 1
-        #create the array for particule type and gives a value 4
-        particle_type_vol = [0 for x in points]
-        particle_parameters = [self.frictionVolume for x in points[0]]
-        return(points, particle_type_vol, particle_parameters) 
-
-    def bgeoToNpz(self, nbPointsVolume, adressNpz) :
+    def bgeoToNpz(self, nbPointsSurface, adressNpz) :
         """
         Input : nb points in the volume and adress where npz stored
         Put all the information contained in the different bgeo file in right npz file
         Output : Confirmation transfer done
         """
-        if (self.adressBgeoObject != "") :
-            positionsVol, particleTypeVol = self.bgeoToDataVolume(nbPointsVolume)
+        if (self.adressObject is not None) :
+            positionsVol, particleTypeVol, particleParVol = self.xyzToDataSurface(nbPointsSurface)
         else :
             positionsVol, particleTypeVol, particleParVol = [], [], []
         # Transform bgeo file for training in npz
@@ -150,15 +148,17 @@ class simulations :
             i = 0
             dataset = {}
             for simuTrain in setSimuTrain :
-                positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuTrain)
-                positions = positionsVol + positionsPoints 
+                positionsPoints, particleTypePoint, particleParPoint = self.bgeoToDataPoints(simuTrain)
+                positions = []
+                for positionTpsFixe in positionsPoints :
+                    positions.append(positionsVol + positionTpsFixe)
                 particleType = particleTypeVol + particleTypePoint
-                particlePar += particleParVol
+                particlePar = particleParVol + particleParPoint
                 data = (np.array(positions), np.array(particleType), np.array(particlePar))
                 name = "simulation_trajectory_" + str(i)
                 i += 1
                 dataset[name] = data
-            folderPathNpz = adressNpz + "train" + str(self.young) + "_" + str(self.nu) + "_" + str(self.rho) + "_" + str(self.frictionAngle) + str(len(setSimuTrain))
+            folderPathNpz = adressNpz + "train" + self.signature() + str(len(setSimuTrain))
             np.savez_compressed(folderPathNpz, **dataset)
             folderPathNpz += ".npz"
             self.AdressNpzTrainReserve.append(folderPathNpz)
@@ -168,14 +168,16 @@ class simulations :
         dataset = {}
         for simuValid in self.AdressBgeoValid :
             positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuValid)
-            positions = positionsVol + positionsPoints 
+            positions = []
+            for positionTpsFixe in positionsPoints :
+                positions.append(positionsVol + positionTpsFixe) 
             particleType = particleTypeVol + particleTypePoint
             particlePar += particleParVol
             data = (np.array(positions), np.array(particleType), np.array(particlePar))
             name = "simulation_trajectory_" + str(i)
             i += 1
             dataset[name] = data
-        folderPathNpz = adressNpz + "valid" + str(self.young) + "_" + str(self.nu) + "_" + str(self.rho) + "_" + str(self.frictionAngle) + str(len(self.AdressBgeoValid))
+        folderPathNpz = adressNpz + "valid" + self.signature()
         np.savez_compressed(folderPathNpz, **dataset)
         folderPathNpz += ".npz"
         self.AdressNpzValid = folderPathNpz
@@ -185,20 +187,22 @@ class simulations :
         dataset = {}
         for simuTest in self.AdressBgeoTest :
             positionsPoints, particleTypePoint, particlePar = self.bgeoToDataPoints(simuTest)
-            positions = positionsVol + positionsPoints 
+            positions = []
+            for positionTpsFixe in positionsPoints :
+                positions.append(positionsVol + positionTpsFixe)            
             particleType = particleTypeVol + particleTypePoint
             particlePar += particleParVol
             data = (np.array(positions), np.array(particleType), np.array(particlePar))
             name = "simulation_trajectory_" + str(i)
             i += 1
             dataset[name] = data
-        folderPathNpz = adressNpz + "test" + str(self.young) + "_" + str(self.nu) + "_" + str(self.rho) + "_" + str(self.frictionAngle) + "_" + str(len(self.AdressBgeoTest))
+        folderPathNpz = adressNpz + "test" + self.signature()
         np.savez_compressed(folderPathNpz, **dataset)
         folderPathNpz += ".npz"
         self.AdressNpzTest = folderPathNpz
         print("Transformation bgeo to npz done")
 
-    def createDataset(self, adressBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', adressLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/granular_collapse_gns.lua', 
+    def createDataset(self, adressBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', adressLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua', 
                        nbPointsVolume = 1000, nbSimuTrain = [10, 20], nbSimuTest = 4, nbSimuValid = 4, randomnessTrain = 0, randomnessValid = 0 ,
                        exeMPM = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/exeMPM.sh') :
         self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimuTest, "test")
@@ -207,7 +211,7 @@ class simulations :
             self.launchSimulation(adressBgeo, exeMPM, adressLua, nbSimu, "train", randomnessTrain)
         self.bgeoToNpz(nbPointsVolume, adressNpz)
     
-    def trainGNS(self, nbTrainingSteps, nbTrainingStepsToAdd, exeGNStrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNStrain.sh', exeGNSretrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNSretrain.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
+    def trainGNS(self, nbTrainingSteps, nbTrainingStepsToAdd, exeGNStrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNStrain.sh', exeGNSretrain = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSretrain.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
         #Copy the right training set
         shutil.copy(self.AdressNpzTrainReserve[self.AdressTrain], adressNpz + "train.npz")
         #Modify the bash file to have the right one 
@@ -221,9 +225,8 @@ class simulations :
             # Modify the specific lines
             with open(exeGNSretrain, 'w') as file:
                 for line in lines:
-                    stripped_line = line.strip()
-                    if stripped_line[:11] in linesToReplace:
-                        file.write(linesToReplace[stripped_line[:11]] + '\n')
+                    if line[:11] in linesToReplace:
+                        file.write(linesToReplace[line[:11]] + '\n')
                     else:
                         file.write(line)
             command = f"conda run -n GPU_pytorch1 bash {exeGNSretrain}"
@@ -234,15 +237,16 @@ class simulations :
             # Modify the line to use the right model
             with open(exeGNStrain, 'w') as file:
                 for line in lines:
-                    if line.strip()[:11] == "NTRAINING_S":
+                    if line[:11] == "NTRAINING_S":
                         file.write("NTRAINING_STEPS=" + str(nbTrainingStepsToAdd) + '\n')
                     else:
                         file.write(line)
             command = f"conda run -n GPU_pytorch1 bash {exeGNStrain}"
         #Run the actual trtaining cycle
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+        print(resultGNS.stderr)
             
-    def validGNS(self, nbTrainingSteps, exeGNSvalid = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNSvalid.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
+    def validGNS(self, nbTrainingSteps, exeGNSvalid = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSvalid.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
         """
         Input : the nbTraining cycle to know where we are in term of training, the rest is already known
         Output : modif of loss value of the object
@@ -271,7 +275,7 @@ class simulations :
         loss = float(loss[1:])
         self.loss = loss
     
-    def testGNS(self, nbTrainingSteps, exeGNStest = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNStest.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
+    def testGNS(self, nbTrainingSteps, exeGNStest = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNStest.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
         """
         Input : the nbTraining cycle to know where we are in term of training, use same bash as valid becvause same thing informatiquement
         Output : loss on the test set
@@ -300,26 +304,34 @@ class simulations :
         loss = float(loss[1:])
         return(loss)
     
-    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/myCode/runGNSrollout.sh') :
+    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSrollout.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', typeOutput = "gif") :
         """
-        Input : the nbTraining cycle to know where we are in term of training, use same bash as valid becvause same thing informatiquement
+        Input : the nbTraining cycle to know where we are in term of training
         Output : create one rollout as a gif
         """
+        shutil.copy(self.AdressNpzTest, adressNpz + "test.npz")
         with open(exeGNSrollout, 'r') as file:
             lines = file.readlines()
 
         # Modify the line to use the right model
         with open(exeGNSrollout, 'w') as file:
             for line in lines:
-                if line.strip()[:11] == "MODEL_FILE=":
+                if line[:11] == "MODEL_FILE=":
                     file.write("MODEL_FILE=\"model-" + str(nbTrainingSteps) + ".pt\"" + '\n')
+                elif line[:11] == "OUTPUT_MODE":
+                    file.write("OUTPUT_MODE=\"" + str(typeOutput) + "\"" + '\n')
                 else:
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSrollout}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
     
     def signature(self) :
-        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)))
+        i = 5
+        nameObject = self.adressObject[-i:]
+        while nameObject[0] != "/" and i < 15 :
+            i += 1
+            nameObject = self.adressObject[-i:]
+        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + nameObject)
 
 def testClassSimulations() : 
     simu = simulations()
@@ -331,7 +343,6 @@ def testClassSimulations() :
     simu.rolloutGNS(1)
     print("rollout done")
     print("loss lors du test : " + str(simu.testGNS(1)))
-
 
 
 

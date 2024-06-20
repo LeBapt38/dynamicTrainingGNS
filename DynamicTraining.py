@@ -8,10 +8,10 @@ Final file to code the way I want to train the GNS.
 
 from SetOfSimulations import *
 
+simus = setOfSimulations(nbSimuTraining=[5,10], nbSimuTest=1, nbSimuValid=4)
 
-def dynamicTraining() :
+def dynamicTraining(simus) :
     #create dataset
-    simus = setOfSimulations(nbSimuTraining=[5,10], nbSimuTest=1, nbSimuValid=4)
     parameters = []
     for i in range(3) :
         for j in range(3) :

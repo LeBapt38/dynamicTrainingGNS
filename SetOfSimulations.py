@@ -11,7 +11,7 @@ from Simulations import *
 
 class setOfSimulations :
 
-    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [10,20], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua') :
+    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [1], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua') :
         # Define useful quantities
         self.pathBgeo = pathBgeo
         self.pathExe = pathExe
@@ -92,11 +92,12 @@ class setOfSimulations :
                 else:
                     file.write(line)
 
-    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0) :
-        for setOfParameter in parameters :
-            simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume)
-            simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh", randomnessTrain=randomnessTrain, randomnessValid=randomnessValid)
-            self.setOfSimulations.append(simu)
+    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0, adressObject = ['/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/halfPlane.dat']) :
+        for path in adressObject :
+            for setOfParameter in parameters :
+                simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume, adressObject=path)
+                simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh", randomnessTrain=randomnessTrain, randomnessValid=randomnessValid)
+                self.setOfSimulations.append(simu)
     
     def orderByLoss(self) :
         """
@@ -119,10 +120,10 @@ class setOfSimulations :
 
     def trainGNScycle(self) :
         for simu in self.setOfSimulations :
-            simu.trainGNS(self.nbTrainingSteps,self.nbStepsPerParametersPerCycle)
+            simu.trainGNS(self.nbTrainingSteps,self.nbStepsPerParametersPerCycle, exeGNStrain=self.pathExe+"runGNStrain.sh", exeGNSretrain=self.pathExe+"runGNSretrain.sh", adressNpz=self.pathNpz)
             self.nbTrainingSteps += self.nbStepsPerParametersPerCycle
         for simu in self.setOfSimulations :
-            simu.validGNS(self.nbTrainingSteps)
+            simu.validGNS(self.nbTrainingSteps, exeGNSvalid=self.pathExe+"runGNSvalid.sh", adressNpz=self.pathNpz)
         self.orderByLoss()
         self.adaptNbOfSimu()
         return(self.averageLoss)
@@ -199,7 +200,7 @@ class setOfSimulations :
 def testClassSetOfSimulations() :
     simu = setOfSimulations(nbSimuTraining=[1])
     simu.createSuperDataset(parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}, {"young" : 4e7, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}])
-    for i in range(10) :
+    for i in range(1) :
         simu.trainGNScycle()
         print("training " + str(i) + " done")
     simu.setOfSimulations[0].rolloutGNS(simu.nbTrainingSteps)
