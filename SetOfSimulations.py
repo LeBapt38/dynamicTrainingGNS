@@ -7,88 +7,116 @@ This file contains the class with to train a GNS on different set of parameters.
 """
 
 import matplotlib.pyplot as plt
+import json
 from Simulations import *
 
 class setOfSimulations :
 
-    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [1], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua') :
-        # Define useful quantities
-        self.pathBgeo = pathBgeo
-        self.pathExe = pathExe
-        self.pathNpz = pathNpz
-        self.setOfSimulations = setOfSimulations
-        self.nbTrainingSteps = nbTrainingSteps
-        self.nbStepsPerParametersPerCycle = nbStepsPerParametersPerCycle
-        self.nbSimuTraining = nbSimuTraining
-        self.nbSimuTest = nbSimuTest
-        self.nbSimuValid = nbSimuValid
-        self.nbFrame = nbFrame
-        self.pathLua = pathLua
+    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [1], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', pathRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/rollouts/rollout_ex0_vtk-GNS/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua', fromJsonFile = None) :
+        if fromJsonFile is None :
+            # Define useful quantities normally
+            self.pathBgeo = pathBgeo
+            self.pathExe = pathExe
+            self.pathNpz = pathNpz
+            self.setOfSimulations = setOfSimulations
+            self.nbTrainingSteps = nbTrainingSteps
+            self.nbStepsPerParametersPerCycle = nbStepsPerParametersPerCycle
+            self.nbSimuTraining = nbSimuTraining
+            self.nbSimuTest = nbSimuTest
+            self.nbSimuValid = nbSimuValid
+            self.nbFrame = nbFrame
+            self.pathLua = pathLua
+            self.pathRollout = pathRollout
+            self.pathMPM = pathMPM
+            self.pathGNS = pathGNS
+        else : 
+            # Define useful quantities from a saved json file
+            with open(fromJsonFile, 'r') as file :
+                data = json.load(file)
+            self.pathBgeo = data["pathBgeo"]
+            self.pathExe = data["pathExe"]
+            self.pathNpz = data["pathNpz"]
+            self.nbTrainingSteps = data["nbTrainingSteps"]
+            self.nbStepsPerParametersPerCycle = data["nbStepsPerParametersPerCycle"]
+            self.nbSimuTraining = data["nbSimuTraining"]
+            self.nbSimuTest = data["nbSimuTest"]
+            self.nbSimuValid = data["nbSimuValid"]
+            self.nbFrame = data["nbFrame"]
+            self.pathLua = data["pathLua"]
+            self.pathRollout = data["pathRollout"]
+            self.pathMPM = data["pathMPM"]
+            self.pathGNS = data["pathGNS"]
+            self.setOfSimulations = []
+            for dico in data["setOfSimilations"] :
+                simu = simulations(young=dico["young"], nu=dico["nu"], rho=dico["rho"], frictionAngle=dico["friction angle"], frictionVolume=dico["friction volume"], nbFrame=dico["nb frame"], AdressBgeoTrain=dico["AdressTrain"], AdressBgeoTrainReserve=dico["AdressBgeoTrainReserve"], AdressBgeoTest=dico["AdressBgeoTest"], AdressBgeoValid=dico["AdressBgeoValid"], adressObject=dico["adressObject"], AdressNpzTrainReserve=dico["AdressNpzTrainReserve"], adressNpzTest=dico["AdressNpzTest"], AdressNpzValid=dico["AdressNpzValid"], loss=dico["loss"], adressObjectVdb=dico["adressObjectVdb"])
+                setOfSimulations.append(simu)
+
+
         # Modify bash file to go where the GNS algo is
-        with open(pathExe + "exeMPM.sh", 'w') as file :
+        with open(self.pathExe + "exeMPM.sh", 'w') as file :
             file.write("#!/bin/bash" + '\n')
-            file.write(pathMPM + " " + pathLua + '\n')
+            file.write(self.pathMPM + " " + self.pathLua + '\n')
         
-        with open(pathExe + "runGNSretrain.sh", 'r') as file:
+        with open(self.pathExe + "runGNSretrain.sh", 'r') as file:
             lines = file.readlines()
-        with open(pathExe + "runGNSretrain.sh", 'w') as file:
+        with open(self.pathExe + "runGNSretrain.sh", 'w') as file:
             for line in lines:
                 if line.strip()[:3] == "cd ":
-                    file.write("cd " + pathGNS + '\n')
+                    file.write("cd " + self.pathGNS + '\n')
                 else:
                     file.write(line)
         
-        with open(pathExe + "runGNStrain.sh", 'r') as file:
+        with open(self.pathExe + "runGNStrain.sh", 'r') as file:
             lines = file.readlines()
-        with open(pathExe + "runGNStrain.sh", 'w') as file:
+        with open(self.pathExe + "runGNStrain.sh", 'w') as file:
             for line in lines:
                 if line.strip()[:3] == "cd ":
-                    file.write("cd " + pathGNS + '\n')
+                    file.write("cd " + self.pathGNS + '\n')
                 else:
                     file.write(line)
         
-        with open(pathExe + "runGNSrollout.sh", 'r') as file:
+        with open(self.pathExe + "runGNSrollout.sh", 'r') as file:
             lines = file.readlines()
-        with open(pathExe + "runGNSrollout.sh", 'w') as file:
+        with open(self.pathExe + "runGNSrollout.sh", 'w') as file:
             for line in lines:
                 if line.strip()[:3] == "cd ":
-                    file.write("cd " + pathGNS + '\n')
+                    file.write("cd " + self.pathGNS + '\n')
                 else:
                     file.write(line)
         
-        with open(pathExe + "runGNStest.sh", 'r') as file:
+        with open(self.pathExe + "runGNStest.sh", 'r') as file:
             lines = file.readlines()
-        with open(pathExe + "runGNStest.sh", 'w') as file:
+        with open(self.pathExe + "runGNStest.sh", 'w') as file:
             for line in lines:
                 if line.strip()[:3] == "cd ":
-                    file.write("cd " + pathGNS + '\n')
+                    file.write("cd " + self.pathGNS + '\n')
                 else:
                     file.write(line)
         
-        with open(pathExe + "runGNSvalid.sh", 'r') as file:
+        with open(self.pathExe + "runGNSvalid.sh", 'r') as file:
             lines = file.readlines()
-        with open(pathExe + "runGNSvalid.sh", 'w') as file:
+        with open(self.pathExe + "runGNSvalid.sh", 'w') as file:
             for line in lines:
                 if line.strip()[:3] == "cd ":
-                    file.write("cd " + pathGNS + '\n')
+                    file.write("cd " + self.pathGNS + '\n')
                 else:
                     file.write(line)
         
-        with open(pathLua, 'r') as file:
+        with open(self.pathLua, 'r') as file:
             lines = file.readlines()
-        with open(pathLua, 'w') as file:
+        with open(self.pathLua, 'w') as file:
             for line in lines:
                 if line.strip()[:12] == "end_frame = ":
-                    file.write("end_frame = " + str(nbFrame-1) + '\n')
+                    file.write("end_frame = " + str(self.nbFrame-1) + '\n')
                 else:
                     file.write(line)
         
-        with open(pathNpz + "metadata.json", 'r') as file:
+        with open(self.pathNpz + "metadata.json", 'r') as file:
             lines = file.readlines()
-        with open(pathNpz + "metadata.json", 'w') as file:
+        with open(self.pathNpz + "metadata.json", 'w') as file:
             for line in lines:
                 if line.strip()[:12] == "\"sequence_length\": ":
-                    file.write("\"sequence_length\": " + str(nbFrame) + '\n')
+                    file.write("\"sequence_length\": " + str(self.nbFrame) + '\n')
                 else:
                     file.write(line)
 
@@ -98,6 +126,7 @@ class setOfSimulations :
                 simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume, adressObject=path)
                 simu.createDataset(adressBgeo = self.pathBgeo, adressNpz = self.pathNpz, adressLua = self.pathLua, nbPointsVolume = nbPointsVolume, nbSimuTrain=self.nbSimuTraining, nbSimuTest=self.nbSimuTest, nbSimuValid=self.nbSimuValid, exeMPM = self.pathExe + "exeMPM.sh", randomnessTrain=randomnessTrain, randomnessValid=randomnessValid)
                 self.setOfSimulations.append(simu)
+        self.saveSetOfSimulations("autoBackup")
     
     def orderByLoss(self) :
         """
@@ -191,9 +220,31 @@ class setOfSimulations :
         plt.xlabel(par + " [" + b + "]")
         plt.title("Average loss for each value of " + par)
         return(listOfValue, listOfLoss)
+    
+    def saveSetOfSimulations(self, fileName) :
+        dico = {}
+        dico["pathBgeo"] = self.pathBgeo
+        dico["pathExe"] = self.pathExe
+        dico["pathNpz"] = self.pathNpz
+        dico["nbTrainingSteps"] = self.nbTrainingSteps
+        dico["nbStepsPerParametersPerCycle"] = self.nbStepsPerParametersPerCycle
+        dico["nbSimuTraining"] = self.nbSimuTraining
+        dico["nbSimuTest"] = self.nbSimuTest
+        dico["nbSimuValid"] = self.nbSimuValid
+        dico["nbFrame"] = self.nbFrame
+        dico["pathLua"] = self.pathLua
+        dico["pathRollout"] = self.pathRollout
+        dico["pathMPM"] = self.pathMPM
+        dico["pathGNS"] = self.pathGNS
 
-                
-
+        listOfDico = []
+        for simu in self.setOfSimulations :
+            listOfDico.append(simu.objectToDico())
+        dico["setOfSimilations"] = listOfDico
+        if fileName[-5:] != ".json" :
+            fileName += ".json"
+        with open("backupSimus/" + fileName, 'w') as file :
+            json.dump(dico, file, indent=2)
 
 
 

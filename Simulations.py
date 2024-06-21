@@ -10,6 +10,7 @@ import hou
 import numpy as np
 import subprocess
 import shutil
+import postRollout
 #import createObstacles as co
 
 class simulations :
@@ -264,6 +265,7 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSvalid}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+        print(resultGNS.stderr)
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
@@ -293,6 +295,7 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNStest}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+        print(resultGNS.stderr)
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
@@ -304,7 +307,7 @@ class simulations :
         loss = float(loss[1:])
         return(loss)
     
-    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSrollout.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', typeOutput = "gif") :
+    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/runGNSrollout.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', typeOutput = "vtk", adressRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/rollouts/rollout_ex0_vtk-GNS/', adressOutput = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/Rollouts') :
         """
         Input : the nbTraining cycle to know where we are in term of training
         Output : create one rollout as a gif
@@ -324,6 +327,17 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSrollout}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+        print(resultGNS.stderr)
+        command1 = f"mkdir \'" + adressOutput + "/" + self.signature() + "\'"
+        subprocess.run(command1, capture_output=True, text=True, shell=True)
+        if typeOutput == "vtk" :
+            for i in range(self.nbFrame) :
+                vtu_file = adressRollout + "points" + str(i) + ".vtu"
+                df = postRollout.read_vtu(vtu_file)
+                df.to_csv(adressOutput + "/" + self.signature() + "/output" + str(i) + ".csv", index=False)
+            print("Path to bgeo : " + self.AdressBgeoTest[0])
+            print("Path to csv : " + adressOutput)
+
     
     def signature(self) :
         i = 5
@@ -331,7 +345,29 @@ class simulations :
         while nameObject[0] != "/" and i < 15 :
             i += 1
             nameObject = self.adressObject[-i:]
-        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + nameObject)
+        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + nameObject[1:-4])
+    
+    def objectToDico(self) :
+        dico = {}
+        dico["young"] = self.young
+        dico["nu"] = self.nu
+        dico["rho"] = self.rho
+        dico["friction angle"] = self.frictionAngle
+        dico["friction volume"] = self.frictionVolume
+        dico["nb frame"] = self.nbFrame
+        dico["AdressTrain"] = self.AdressTrain
+        dico["AdressBgeoTrainReserve"] = self.AdressBgeoTrainReserve
+        dico["AdressBgeoTest"] = self.AdressBgeoTest
+        dico["AdressBgeoValid"] = self.AdressBgeoValid
+        dico["adressObject"] = self.adressObject
+        dico["AdressNpzTrainReserve"] = self.AdressNpzTrainReserve
+        dico["AdressNpzTest"] = self.AdressNpzTest
+        dico["AdressNpzValid"] = self.AdressNpzValid
+        dico["loss"] = self.loss
+        dico["adressObjectVdb"] = self.adressObjectVdb
+        return dico
+
+
 
 def testClassSimulations() : 
     simu = simulations()

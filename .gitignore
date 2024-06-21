@@ -1,5 +1,8 @@
 __pycache__
 backup
+postAndPreprocessing
+Rollouts
+backupSimus
 *.dat
 *.gif
 *.hipnc

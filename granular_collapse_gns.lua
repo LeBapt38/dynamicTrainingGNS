@@ -39,7 +39,7 @@ volFriction = 0.31
 max_dt = 0.6 * dx * math.sqrt(rrho/ryoung)
 
 i = 0
-output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_23_0-1"
+output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_23_halfPlane_0-1"
 function initialize(frame)
 	--ici on charge la géométrie
 	local min_corner = TV.create({-0.0705,0, -0.0705})
