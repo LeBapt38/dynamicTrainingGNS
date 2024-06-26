@@ -1,10 +1,10 @@
--- mpm 3d
+-- mpm 2d
 math.randomseed(123)
 
 --numerical parameters
 end_frame = 80
-dx = 0.009
-gravity = TV.create({0, -9.81, 0})
+dx = 0.004
+gravity = TV.create({0, -9.81})
 newton_iterations = 100
 quasistatic = false
 symplectic = true
@@ -42,10 +42,10 @@ i = 0
 output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_25__0-1"
 function initialize(frame)
 	--ici on charge la géométrie
-	local min_corner = TV.create({-0.0705,0, -0.0705})
-	local max_corner = TV.create({.0705,.0564, .0705})
+	local min_corner = TV.create({-0.1,0})
+	local max_corner = TV.create({.1,.1})
 	local box = AxisAlignedAnalyticBox.new(min_corner, max_corner)
-	local particles_hande = mpm:sampleInAnalyticLevelSet(box, rrho, 8)
+	local particles_hande = mpm:sampleInAnalyticLevelSet(box, rrho, 4)
 
 	--ici on charge la loi elastique
 	local m = StvkWithHencky.new(ryoung,rnu)
@@ -57,8 +57,8 @@ function initialize(frame)
 
 
 	-- on charge une condition aux limites
-	local ground_origin = TV.create({-0.5,0.0, 0.0})
-	local ground_normal = TV.create({0,1,0})
+	local ground_origin = TV.create({-0.5,0.0})
+	local ground_normal = TV.create({0,1})
 	local ground_ls = HalfSpace.new(ground_origin, ground_normal)
 	local ground_object = AnalyticCollisionObject.new(ground_ls, SEPARATE)
 	ground_object:setFriction(volFriction)

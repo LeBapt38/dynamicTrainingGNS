@@ -11,9 +11,9 @@ def read_vtu(file_path):
 
     points_list = []
     for i in range(num_points):
-        points_list.append(points.GetTuple3(i))
+        points_list.append(points.GetTuple2(i))
 
-    df = pd.DataFrame(points_list, columns=["x", "y", "z"])
+    df = pd.DataFrame(points_list, columns=["x", "y"])
     return df
 
 

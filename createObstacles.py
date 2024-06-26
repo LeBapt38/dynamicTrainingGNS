@@ -8,22 +8,24 @@ Short file to define the obstacles used.
 import numpy as np
 #import pyopenvdb as vdb
 
-def createHalfPlane(nbPointsPerDirection : list, Origin, Basis, Size) :
+def createSupport(nbPointsPerDirection : list, Origin, Basis, Size) :
     """
     Args : nb points representing the plane on each elements of the basis, the origin ("bottom left" of the plan), the basis of the plane (2 3D vectors repented by lists), size allong each component of the basis
 
     Output : file with the list of points to represent surface
     """
     Basis = np.array(Basis)
-    dx = Size[0] * (1-0.00001) / nbPointsPerDirection[0]
-    dy = Size[1] * (1-0.00001) / nbPointsPerDirection[1]
+    Origin = np.array(Origin)
+    dr = []
+    for i in range(len(nbPointsPerDirection)) :
+        dr.append(Size[i]/ nbPointsPerDirection[i])
     points = []
     for i in range(nbPointsPerDirection[0]) :
         for j in range(nbPointsPerDirection[1]) :
-            point = np.array(Origin)
-            point += float(i) * dx * Basis[0]
-            point += float(j) * dy * Basis[1]
-            points.append(point)
+            point = np.copy(Origin)
+            point += (i + 0.5*j) * dr[0] * Basis[0]
+            point += j * dr[1] * Basis[1]
+            points.append(list(point))
     return points
 
 def saveObject(object, filePath) : 

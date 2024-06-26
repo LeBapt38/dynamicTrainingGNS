@@ -90,7 +90,7 @@ class simulations :
             self.AdressBgeoTrainReserve.append(AdressBgeo)
         print("simulation " + typeSimu + " " + self.signature() + "_" + str(i+1) + "-" + str(nbSimu) + " done")
     
-    def bgeoToDataPoints(self, adressBgeo) :
+    def bgeoToDataPoints(self, adressBgeo, dim=2) :
         positions = []
         for i in range(self.nbFrame) :
             filePath = adressBgeo + "/partio_" + str(i) + ".bgeo"
@@ -103,7 +103,7 @@ class simulations :
             positions_tps_fixe = []
             for point in geo.points() :
                 position = list(point.position())
-                positions_tps_fixe.append(position)
+                positions_tps_fixe.append(position[:dim])
             positions.append(positions_tps_fixe)
         
         #create the array for particule type and gives a value (0 for points or 5?)
