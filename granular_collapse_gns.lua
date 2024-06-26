@@ -3,7 +3,7 @@ math.randomseed(123)
 
 --numerical parameters
 end_frame = 80
-dx = 0.01
+dx = 0.009
 gravity = TV.create({0, -9.81, 0})
 newton_iterations = 100
 quasistatic = false
@@ -31,7 +31,7 @@ rnu = nu * (1 + ((0.5 - b) * randomness))
 rho = 25000
 rrho = rho * (1 + ((0.5 - c) * randomness))
 
-friction_angle =23
+friction_angle =25
 rfriction_angle = friction_angle * (1 + ((0.5 - d) * randomness))
 
 volFriction = 0.31
@@ -39,7 +39,7 @@ volFriction = 0.31
 max_dt = 0.6 * dx * math.sqrt(rrho/ryoung)
 
 i = 0
-output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_23_halfPlane_0-1"
+output = "/media/user/Volume/granular_collapse_GNS_dyn/train/300000_30_25000_25__0-1"
 function initialize(frame)
 	--ici on charge la géométrie
 	local min_corner = TV.create({-0.0705,0, -0.0705})

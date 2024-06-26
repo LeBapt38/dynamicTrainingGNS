@@ -16,7 +16,7 @@ import postRollout
 class simulations :
     def __init__(self, young = 3e5, nu = 0.3, rho = 25000, frictionAngle = 23, frictionVolume = 0.31, nbFrame = 81,
                  AdressBgeoTrain = 0, AdressBgeoTrainReserve = [], AdressBgeoTest = [], AdressBgeoValid = [], adressObject = None, AdressNpzTrainReserve = [], adressNpzTest = "", adressNpzValid = "",
-                 loss = 0) :
+                 loss = 0, adressObjectVdb = None) :
         self.young = young
         self.nu = nu
         self.rho = rho 
@@ -34,7 +34,7 @@ class simulations :
         self.AdressNpzTest = adressNpzTest
         self.AdressNpzValid = adressNpzValid
         self.loss = loss
-        self.adressObjectVdb = None
+        self.adressObjectVdb = adressObjectVdb
     
 
     def launchSimulation(self,  adressSimu, exeMPM, adressLua, nbSimu, typeSimu, randomness = 0) :
@@ -245,7 +245,6 @@ class simulations :
             command = f"conda run -n GPU_pytorch1 bash {exeGNStrain}"
         #Run the actual trtaining cycle
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
-        print(resultGNS.stderr)
             
     def validGNS(self, nbTrainingSteps, exeGNSvalid = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSvalid.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
         """
@@ -265,7 +264,6 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSvalid}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
-        print(resultGNS.stderr)
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
@@ -295,7 +293,6 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNStest}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
-        print(resultGNS.stderr)
         #Find the loss in the log
         loss = resultGNS.stdout[-5:]
         i = 0
@@ -327,7 +324,6 @@ class simulations :
                     file.write(line)
         command = f"conda run -n GPU_pytorch1 bash {exeGNSrollout}"
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
-        print(resultGNS.stderr)
         command1 = f"mkdir \'" + adressOutput + "/" + self.signature() + "\'"
         subprocess.run(command1, capture_output=True, text=True, shell=True)
         if typeOutput == "vtk" :
@@ -341,11 +337,14 @@ class simulations :
     
     def signature(self) :
         i = 5
-        nameObject = self.adressObject[-i:]
-        while nameObject[0] != "/" and i < 15 :
-            i += 1
-            nameObject = self.adressObject[-i:]
-        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + nameObject[1:-4])
+        if self.adressObject is not None :
+            nameObject = self.adressObject[-i:-4]
+            while nameObject[0] != "/" and i < 15 :
+                i += 1
+                nameObject = self.adressObject[-i:-4]
+            nameObject = nameObject[1:]
+        else : nameObject = ""
+        return(str(int(self.young)) + "_" + str(int(self.nu * 100)) + "_" + str(int(self.rho)) + "_" + str(int(self.frictionAngle)) + "_" + nameObject)
     
     def objectToDico(self) :
         dico = {}

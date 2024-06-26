@@ -48,8 +48,8 @@ class setOfSimulations :
             self.pathGNS = data["pathGNS"]
             self.setOfSimulations = []
             for dico in data["setOfSimilations"] :
-                simu = simulations(young=dico["young"], nu=dico["nu"], rho=dico["rho"], frictionAngle=dico["friction angle"], frictionVolume=dico["friction volume"], nbFrame=dico["nb frame"], AdressBgeoTrain=dico["AdressTrain"], AdressBgeoTrainReserve=dico["AdressBgeoTrainReserve"], AdressBgeoTest=dico["AdressBgeoTest"], AdressBgeoValid=dico["AdressBgeoValid"], adressObject=dico["adressObject"], AdressNpzTrainReserve=dico["AdressNpzTrainReserve"], adressNpzTest=dico["AdressNpzTest"], AdressNpzValid=dico["AdressNpzValid"], loss=dico["loss"], adressObjectVdb=dico["adressObjectVdb"])
-                setOfSimulations.append(simu)
+                simu = simulations(young=dico["young"], nu=dico["nu"], rho=dico["rho"], frictionAngle=dico["friction angle"], frictionVolume=dico["friction volume"], nbFrame=dico["nb frame"], AdressBgeoTrain=dico["AdressTrain"], AdressBgeoTrainReserve=dico["AdressBgeoTrainReserve"], AdressBgeoTest=dico["AdressBgeoTest"], AdressBgeoValid=dico["AdressBgeoValid"], adressObject=dico["adressObject"], AdressNpzTrainReserve=dico["AdressNpzTrainReserve"], adressNpzTest=dico["AdressNpzTest"], adressNpzValid=dico["AdressNpzValid"], loss=dico["loss"], adressObjectVdb=dico["adressObjectVdb"])
+                self.setOfSimulations.append(simu)
 
 
         # Modify bash file to go where the GNS algo is
@@ -120,7 +120,7 @@ class setOfSimulations :
                 else:
                     file.write(line)
 
-    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 23}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0, adressObject = ['/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/halfPlane.dat']) :
+    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 25}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0, adressObject = [None]) :
         for path in adressObject :
             for setOfParameter in parameters :
                 simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume, adressObject=path)
@@ -172,7 +172,7 @@ class setOfSimulations :
         std -= self.averageLoss()**2
         return(std)
   
-    def graphLossParameter(self, parameter = "rho") :
+    def graphLossParameter(self, parameter = "rho", nameFile = None) :
         '''
         Input : the parameter on which we want the graph made
         Show the graph using test values.
@@ -219,6 +219,8 @@ class setOfSimulations :
         plt.ylabel("Loss")
         plt.xlabel(par + " [" + b + "]")
         plt.title("Average loss for each value of " + par)
+        if nameFile is not None :
+            plt.savefig(nameFile + par)
         return(listOfValue, listOfLoss)
     
     def saveSetOfSimulations(self, fileName) :
