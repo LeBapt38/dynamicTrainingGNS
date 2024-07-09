@@ -38,15 +38,15 @@ def dynamicTraining1(simus) :
         print("training " + str(i) + " done")
     simus.saveSetOfSimulations("halfPlane" + str(nbSteps[-1]) + "StepsVersion1")
     #print quelques rendues
-    nbRendue = 4
+    nbRendue = 1
     pace = len(simus.setOfSimulations) // nbRendue
     for i in range(nbRendue) :
-        simus.setOfSimulations[i*pace].rolloutGNS(simus.nbTrainingSteps)
+        simus.setOfSimulations[i*pace].rolloutGNS(simus.nbTrainingSteps, typeOutput='gif')
     return lossFctSteps, stdLossFctSteps, nbSteps
 
 def dynamicTraining2(simus) :
     simus.saveSetOfSimulations("halfPlaneStepsVersion1")
-    simusBis = setOfSimulations(fromJsonFile="backupSimus.halfPlaneStepsVersion1.json")
+    simusBis = setOfSimulations(fromJsonFile="backupSimus/halfPlaneStepsVersion1.json")
     #change the model and state file compared to others
     simus.nbStepsPerParametersPerCycle = 1
     simus.trainGNScycle()
@@ -65,12 +65,12 @@ def dynamicTraining2(simus) :
         stdLossFctSteps.append(simus.stdLoss())
         nbSteps.append(simus.nbTrainingSteps)
         print("training " + str(i) + " done")
-    simus.saveSetOfSimulations("halfPlane" + str(nbSteps[-1]) + "StepsVersion1")
+    simus.saveSetOfSimulations("halfPlane" + str(nbSteps[-1]) + "StepsVersion2")
     #print quelques rendues
     nbRendue = 3
     pace = len(simus.setOfSimulations) // nbRendue
     for i in range(nbRendue) :
-        simus.setOfSimulations[i*pace].rolloutGNS(simus.nbTrainingSteps)
+        simus.setOfSimulations[i*pace].rolloutGNS(simus.nbTrainingSteps, typeOutput = 'gif')
     return lossFctSteps, stdLossFctSteps, nbSteps
 
 
@@ -78,43 +78,54 @@ def dynamicTraining2(simus) :
 def studyTraining(simus, lossFctSteps, stdLossFctSteps, nbSteps, versionTraining) :
     #Study GNS during and after training
     fig, axs = plt.subplots(1,2)
-    fig.suptitle('Study of the evolution of the loss ' + versionTraining)
+    fig.suptitle('Study of the evolution of the loss')
     axs[0].plot(nbSteps, lossFctSteps, c='b')
-    axs[0].xlabel("Number of training steps")
-    axs[0].ylabel("Average loss")
+    axs[0].set_yscale('log')
+    axs[0].set_xlabel("Number of training steps")
+    axs[0].set_ylabel("Average loss")
 
-    axs[1].plot(nbSteps, stdLossFctSteps, c='o')
-    axs[1].xlabel("Number of training steps")
-    axs[1].ylabel("Standard deviation of the loss")
+    axs[1].plot(nbSteps, stdLossFctSteps, color = 'orange')
+    axs[1].set_yscale('log')
+    axs[1].set_xlabel("Number of training steps")
+    axs[1].set_ylabel("Standard deviation of the loss")
+    fig.savefig("dataTraining/" + versionTraining + ".png")
 
-    simus.graphLossParameter("friction angle", "DataTraining/loss_" + str(nbSteps[-1]) + versionTraining)
-    simus.graphLossParameter("young", "DataTraining/loss_" + str(nbSteps[-1]) + versionTraining)
-    fig.savefig("DataTraining/loss_time_" + str(nbSteps[-1]) + versionTraining)
+    simus.graphLossParameter("friction angle", "dataTraining/loss_" + str(nbSteps[-1]) + versionTraining)
+    simus.graphLossParameter("young", "dataTraining/loss_" + str(nbSteps[-1]) + versionTraining)
+    
 
 def allTraining1() : 
     simus1 = setOfSimulations(nbSimuTraining=[5,10], nbSimuTest=1, nbSimuValid=4)
     Data(simus1)
     lossFctSteps, stdLossFctSteps, nbSteps = dynamicTraining1(simus1)
-    print(lossFctSteps)
-    print(stdLossFctSteps)
-    print(nbSteps)
+    with open('loss.txt', 'w') as f :
+        line = ' '.join(map(str, lossFctSteps)) + '\n'
+        f.write(line)
+        line = ' '.join(map(str, stdLossFctSteps)) + '\n'
+        f.write(line)
+        line = ' '.join(map(str, nbSteps)) + '\n'
+        f.write(line)
     studyTraining(simus1, lossFctSteps, stdLossFctSteps, nbSteps, "dynamic_training_version_1")
 
 def allTraining2() :
     simus2 = setOfSimulations(nbSimuTraining=[5], nbSimuTest=1, nbSimuValid=4)
     Data(simus2)
     lossFctSteps, stdLossFctSteps, nbSteps = dynamicTraining2(simus2)
-    print(lossFctSteps)
-    print(stdLossFctSteps)
-    print(nbSteps)
+    with open('loss.txt', 'w') as f :
+        line = ' '.join(map(str, lossFctSteps)) + '\n'
+        f.write(line)
+        line = ' '.join(map(str, stdLossFctSteps)) + '\n'
+        f.write(line)
+        line = ' '.join(map(str, nbSteps)) + '\n'
+        f.write(line)
     studyTraining(simus2, lossFctSteps, stdLossFctSteps, nbSteps, "dynamic_training_version_2")
 
 def allTrainingClassique() : 
     simus3 = setOfSimulations(nbSimuTraining=[8], nbSimuTest=1, nbSimuValid=4)
+    Data(simus3)
     simus3.nbStepsPerParametersPerCycle = 2
     simus3.trainGNScycle()
     simus3.nbStepsPerParametersPerCycle = 100
-    Data(simus3)
     lossFctSteps, stdLossFctSteps, nbSteps = dynamicTraining1(simus3)
     print(lossFctSteps)
     print(stdLossFctSteps)

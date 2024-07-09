@@ -3,6 +3,7 @@ backup
 postAndPreprocessing
 Rollouts
 backupSimus
+dataTraining
 *.dat
 *.gif
 *.hipnc

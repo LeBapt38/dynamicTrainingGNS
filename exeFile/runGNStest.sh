@@ -2,11 +2,10 @@
 
 cd /home/user/Documents/Baptiste/surrogate_modelling/gns
 
-DATASET_NAME="granular_collapse"
+DATASET_NAME="granular_collapse_2d"
 DATA_PATH="examples/${DATASET_NAME}/datasets/"
 MODEL_PATH="examples/${DATASET_NAME}/models/"
 ROLLOUT_PATH="examples/${DATASET_NAME}/rollouts/"
-mkdir -p ${ROLLOUT_PATH}
 
 MODEL_FILE="model-400000.pt"
 

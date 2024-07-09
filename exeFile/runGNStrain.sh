@@ -3,7 +3,7 @@
 cd /home/user/Documents/Baptiste/surrogate_modelling/gns
 
 # Download a sample of a dataset.
-DATASET_NAME="granular_collapse"
+DATASET_NAME="granular_collapse_2d"
 
 # Train for a few steps.
 DATA_PATH="examples/${DATASET_NAME}/datasets/"

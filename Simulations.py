@@ -118,7 +118,7 @@ class simulations :
         filePath = self.adressObject
         with open(filePath, 'r') as file : 
             lines = file.readlines()
-        if (nbPointsSurface is not None) and (nbPointsSurface > len(lines)) :
+        if (nbPointsSurface is not None) and (nbPointsSurface < len(lines)) :
             pace = len(lines)//nbPointsSurface
         else : pace = 1   
         i = 0
@@ -245,6 +245,7 @@ class simulations :
             command = f"conda run -n GPU_pytorch1 bash {exeGNStrain}"
         #Run the actual trtaining cycle
         resultGNS = subprocess.run(command, capture_output=True, text=True, shell=True)
+        print(resultGNS.stderr)
             
     def validGNS(self, nbTrainingSteps, exeGNSvalid = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/runGNSvalid.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/') :
         """
@@ -304,7 +305,7 @@ class simulations :
         loss = float(loss[1:])
         return(loss)
     
-    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/runGNSrollout.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', typeOutput = "vtk", adressRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/rollouts/rollout_ex0_vtk-GNS/', adressOutput = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/Rollouts') :
+    def rolloutGNS(self, nbTrainingSteps, exeGNSrollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/runGNSrollout.sh', adressNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse_2d/datasets/', typeOutput = "vtk", adressRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse_2d/rollouts/rollout_ex0_vtk-GNS/', adressOutput = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/Rollouts') :
         """
         Input : the nbTraining cycle to know where we are in term of training
         Output : create one rollout as a gif

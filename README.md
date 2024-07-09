@@ -106,5 +106,5 @@ If you change the model and therefore the number of parameters, you may raise un
 - in learned_simulator.py in method encoder_preprocessor(...), material_property.view(nparticle, **nparameters**), nparameters need to be replaced by the number of parameters you have.
 - in data_loader.py lines 105 and 210, np.full((positions.shape[0], **nparameter**)), nparameters need to be replaced by the number of parameters you have.
 
-Sommething a bit more logic, you have to modify the metadata.json file. Put the right number of parameters in material_feature_len and put 37+nbParameters in nnode_in.
+Sommething a bit more logic, you have to modify the metadata.json file. Put the right number of parameters in material_feature_len and put 30+nbParameters in nnode_in. You also have to put 3 in nedge_out.
 

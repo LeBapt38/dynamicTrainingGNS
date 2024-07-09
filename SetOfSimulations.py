@@ -12,7 +12,7 @@ from Simulations import *
 
 class setOfSimulations :
 
-    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [1], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/datasets/', pathRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse/rollouts/rollout_ex0_vtk-GNS/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua', fromJsonFile = None) :
+    def __init__(self, setOfSimulations = [], nbTrainingSteps = 0, nbStepsPerParametersPerCycle = 100, nbSimuTraining = [1], nbSimuTest = 1, nbSimuValid = 1, nbFrame = 81, pathBgeo = '/media/user/Volume/granular_collapse_GNS_dyn/', pathNpz = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse_2d/datasets/', pathRollout = '/home/user/Documents/Baptiste/surrogate_modelling/gns/examples/granular_collapse_2d/rollouts/rollout_ex0_vtk-GNS/', pathExe = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/exeFile/', pathGNS = '/home/user/Documents/Baptiste/surrogate_modelling/gns', pathMPM = '/home/user/Documents/myJixie/jixie_lars/Projects/mpm/mpm', pathLua = '/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/granular_collapse_gns.lua', fromJsonFile = None) :
         if fromJsonFile is None :
             # Define useful quantities normally
             self.pathBgeo = pathBgeo
@@ -120,7 +120,7 @@ class setOfSimulations :
                 else:
                     file.write(line)
 
-    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 25}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0, adressObject = [None]) :
+    def createSuperDataset(self, parameters = [{"young" : 3e5, "nu" : 0.3, "rho" : 25000, "friction angle" : 25}], nbPointsVolume = 1000, frictionVolume = 0.31, randomnessTrain = 0, randomnessValid = 0, adressObject = ['/home/user/Documents/Baptiste/surrogate_modelling/gns/dynamicTraining/support.dat']) :
         for path in adressObject :
             for setOfParameter in parameters :
                 simu = simulations(young = setOfParameter["young"], nu = setOfParameter["nu"], rho = setOfParameter["rho"], frictionAngle = setOfParameter["friction angle"], nbFrame = self.nbFrame, frictionVolume = frictionVolume, adressObject=path)
@@ -155,7 +155,7 @@ class setOfSimulations :
             simu.validGNS(self.nbTrainingSteps, exeGNSvalid=self.pathExe+"runGNSvalid.sh", adressNpz=self.pathNpz)
         self.orderByLoss()
         self.adaptNbOfSimu()
-        return(self.averageLoss)
+        return(self.averageLoss())
     
     def averageLoss(self) :
         moy = 0
