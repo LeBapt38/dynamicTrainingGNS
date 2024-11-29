@@ -14,7 +14,8 @@
 
 
 ## Introduction
-The main goal is to create a python interface which is easier to use compare to the GNS code "right out of the box". The code contains two levels of interface : 
+I coded this project during my internship at the department of Geophysics of the Zurich's university. The goal was to train a graph neural network using data from material point method algorithm to create a quicker algorithm which can be used to predict risks in real time. I was just doing the proof of concept trying the method on small granular collapse. For more details about the internship, you can look at rthe "rapport_de_stage.pdf" available in this repo. 
+The code here is suppose to make the converting of data from the MPM to the GNS easier. The code contains two levels of interface : 
 - The first one contained in Simulations.py allows more flexibility giving just the tools to avoid the bash editing between each training cycle. It also convert the bgeo file in the right format.
 - The second one is in SetOfSimulations.py and contains everything to make the all code really easy to use. However, some flexibility had to be taken away.
 
